@@ -58,6 +58,9 @@ jobs:
       RUST_BACKTRACE: 1
     runs-on: ${{ matrix.os }}
     container: quay.io/pypa/manylinux2014_x86_64:latest
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false # don't fail other jobs if one fails
       matrix:
@@ -71,6 +74,11 @@ jobs:
           cross: false
 
     steps:
+      # git complains: "fatal: detected dubious ownership in repository at ..."
+      # https://github.com/actions/runner-images/issues/6775#issuecomment-1377299658
+      - name: Change Owner of Container Working Directory
+        run: chown root:root .
+
       - name: Checkout sources
         uses: actions/checkout@v3
 
@@ -81,7 +89,7 @@ jobs:
         if: "!startsWith(matrix.os, 'windows')"
         run: |
           mkdir -p runtime/grammars/sources
-          tar xJf grammars/grammars.tar.xz -C runtime/grammars/sources
+          tar xJf grammars/grammars.tar.xz -C runtime/grammars/sources --no-same-owner
 
       # The rust-toolchain action ignores rust-toolchain.toml files.
       # Removing this before building with cargo ensures that the rust-toolchain
@@ -90,10 +98,9 @@ jobs:
         run: rm rust-toolchain.toml
 
       - name: Install ${{ matrix.rust }} toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.target }}
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --target ${{ matrix.target }}
+          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
 
       # Install a pre-release version of Cross
       # TODO: We need to pre-install Cross because we need cross-rs/cross#591 to
@@ -211,7 +218,7 @@ jobs:
 
           source="$(pwd)"
           mkdir -p runtime/grammars/sources
-          tar xJf grammars/grammars.tar.xz -C runtime/grammars/sources
+          tar xJf grammars/grammars.tar.xz -C runtime/grammars/sources --no-same-owner
           rm -rf grammars
 
           cd "$(mktemp -d)"
