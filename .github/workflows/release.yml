@@ -4,6 +4,8 @@ on:
     tags:
     - '[0-9]+.[0-9]+'
     - '[0-9]+.[0-9]+.[0-9]+'
+    - '[0-9]+.[0-9]+-manylinux'
+    - '[0-9]+.[0-9]+.[0-9]+-manylinux'
     branches:
     - 'patch/ci-release-*'
   pull_request:
@@ -55,51 +57,18 @@ jobs:
       # Emit backtraces on panics.
       RUST_BACKTRACE: 1
     runs-on: ${{ matrix.os }}
+    container: quay.io/pypa/manylinux2014_x86_64:latest
     strategy:
       fail-fast: false # don't fail other jobs if one fails
       matrix:
-        build: [x86_64-linux, x86_64-macos, x86_64-windows] #, x86_64-win-gnu, win32-msvc
+        build:
+        - x86_64-linux
         include:
         - build: x86_64-linux
           os: ubuntu-latest
           rust: stable
           target: x86_64-unknown-linux-gnu
           cross: false
-        - build: aarch64-linux
-          os: ubuntu-latest
-          rust: stable
-          target: aarch64-unknown-linux-gnu
-          cross: true
-        - build: riscv64-linux
-          os: ubuntu-latest
-          rust: stable
-          target: riscv64gc-unknown-linux-gnu
-          cross: true
-        - build: x86_64-macos
-          os: macos-latest
-          rust: stable
-          target: x86_64-apple-darwin
-          cross: false
-        - build: x86_64-windows
-          os: windows-latest
-          rust: stable
-          target: x86_64-pc-windows-msvc
-          cross: false
-        # 23.03: build issues
-        - build: aarch64-macos
-          os: macos-latest
-          rust: stable
-          target: aarch64-apple-darwin
-          cross: false
-          skip_tests: true  # x86_64 host can't run aarch64 code
-        # - build: x86_64-win-gnu
-        #   os: windows-2019
-        #   rust: stable-x86_64-gnu
-        #   target: x86_64-pc-windows-gnu
-        # - build: win32-msvc
-        #   os: windows-2019
-        #   rust: stable
-        #   target: i686-pc-windows-msvc
 
     steps:
       - name: Checkout sources
